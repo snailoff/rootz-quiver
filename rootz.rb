@@ -1,8 +1,4 @@
-module Rootz
-
-	PREFIX_PATH = File.expand_path "../public", __FILE__
-	PREFIX_PATHNAME = Pathname.new Rootz::PREFIX_PATH
-	
+module Rootz	
 	class InvalidPathError < StandardError
 		attr_reader :object
 
@@ -17,43 +13,27 @@ module Rootz
 		def initialize path
 			Rootz.logger.info
 
-
-			Rootz.logger.info "notebook : #{$1}"
-			Rootz.logger.info "page : #{$2}"
-
-			settings = JSON.parse read_file("#{File.expand_path "../public/root", __FILE__}/settings")
-			@default_notebook = settings["default_notebook"]
-			@notebooks_path = settings["qvlibrary_path"] if File.exist? settings["qvlibrary_path"]
+			get_settings
 
 			if path =~ /^(.*?)(\/[0-9]+)?$/ 
 				@param_notebook = $1
 				@param_page = $2	
+
 			else
-				redirect to "/root/#{@default_notebook}"
+				#redirect to "/root/#{@default_notebook}"
 			end
 
 			@root = get_notebook_root
 
 
-			unless path =~ /^(.*?)(\/[0-9]+)?$/ 
+			# unless path =~ /^(.*?)(\/[0-9]+)?$/ 
 				
-			end
 
-			
-			Rootz.logger.info "path : #{settings["qvlibrary_path"]}"
+			# end
+			Rootz.logger.info "notebook : #{@param_notebook}"
+			Rootz.logger.info "page : #{@param_page}"
 			Rootz.logger.info "@root : #{@root}"
 		end
-
-
-		def get_notebook_root
-			json = notebooks @notebooks_path
-			json.each do |x|
-				if x["name"] == @param_notebook
-					return "#{@notebooks_path}/#{x["uuid"]}.qvnotebook"					
-				end
-			end
-			""
-		end 
 
 		def parse
 			Rootz.logger.info
@@ -67,6 +47,26 @@ module Rootz
 
 
 	  	private
+
+	  	def get_settings
+			@settings = JSON.parse File.read("#{File.expand_path "..", __FILE__}/settings")
+			@default_notebook = "#{File.expand_path "..", __FILE__}/#{@settings["qvlibrary_path"]}"
+			if File.exist? @default_notebook
+				@notebooks_path = @settings["qvlibrary_path"] 
+			end
+		end
+
+
+		def get_notebook_root
+			json = notebooks @notebooks_path
+			json.each do |x|
+				if x["name"] == @param_notebook
+					return "#{@notebooks_path}/#{x["uuid"]}.qvnotebook"					
+				end
+			end
+			""
+		end 
+
 
 		def notebooks qvlibrary_path
 			Dir.glob("#{qvlibrary_path}/*.qvnotebook/meta.json").map do |x|
@@ -97,10 +97,10 @@ module Rootz
 		# type : text, markdown, latex
 		# data 
 		def note_cell_view cell, qvnote_path
-			# 
+			Rootz.logger.debug "note_cell_view's qvnote_path : #{qvnote_path}"
 
 			if "#{cell["type"]}" == "markdown"
-				return render cell["data"], qvnote_path
+				return render_markdown cell["data"], qvnote_path
 			# elsif cell["type"] == "text"
 			# 	return cell["data"]
 			# elsif cell["type"] == "latex"
@@ -111,7 +111,7 @@ module Rootz
 		end
 
 
-	  	def render plain, qvnote_path
+	  	def render_markdown plain, qvnote_path
 	  		rs = ''
 	  		isNoneBreakBlock = false
 			isCodeBlock = false
@@ -219,47 +219,6 @@ module Rootz
 	  		str
 	  	end
 
-	  	def default_filepath path
-			"#{path}_#{File.basename path}" if File.exist? path
-	  	end
-
-		def read_file path
-			File.read path
-		end
-
-		def read_dir path
-			pathz = File.join path, "*"
-			dirs = []
-			files = []
-			Rootz.logger.debug "read_dir.path : #{pathz}"
-			Dir.glob "#{pathz}" do |file|
-				Rootz.logger.debug "read_dir.file : #{file}"
-				if File.file? file
-					files << "#{convert_link(file)} #{mtime(file)}" if file =~ /\.txt$/
-				else
-					dirs << convert_link(file)
-				end
-			end
-			dirs += files
-			@plain = dirs.join "\n"
-		end
-
-		def convert_navi path
-			tmp = remove_tail(remove_root_prefix(path))
-	        sp = tmp.split /\//
-
-	        atag = []
-	        while !sp.empty?
-                url = sp.join "/"
-                name = sp.pop
-                next if name.empty?
-                a = "<a href=\"#{url}\">#{name}</a>"
-                atag.unshift a
-	        end
-
-	        atag.join(" &gt; ")
-		end
-
 		def convert_link path
 			url = remove_tail(remove_root_prefix(path))
 			name = remove_tail(remove_head(remove_root_prefix(basename(path))))
@@ -292,7 +251,8 @@ module Rootz
 		def remove_root_prefix path
 			return "" if path.empty?
 
-			rs = path.gsub /#{Rootz::PREFIX_PATH}/, ''
+			# rs = path.gsub /#{Rootz::PREFIX_PATH}/, ''
+			rs = path.gsub /public/, ''
 		end
 
 		def replace_spliter path
@@ -309,33 +269,6 @@ module Rootz
 			str.gsub /0/, 'o'
 		end
 		
-		# def default_image path
-		# 	return "" if path == "/"
-
-		# 	path = @default_file_path.empty? ? path : @default_file_path
-
-		# 	if File.file? path
-		# 		name = File.basename path, '.txt'
-		# 		dir = File.dirname path
-		# 		target = File.join "#{dir}", "#{name}.*"
-		# 		Dir.glob "#{target}" do |f|
-		# 			if f =~ /\.(png|jpg|gif)$/i
-		# 				return remove_root_prefix f
-		# 			end
-		# 		end
-		# 	# else
-		# 	# 	name = File.basename path, '.txt'
-		# 	# 	target = File.join "#{path}", "_#{name}.*"
-		# 	# 	Dir.glob "#{target}" do |f|
-		# 	# 		if f =~ /\.(png|jpg|gif)$/i
-		# 	# 			return remove_root_prefix f
-		# 	# 		end
-		# 	# 	end
-		# 	end
-
-		# 	# header_image File.dirname(path)
-		# end
-
 	end
 
 

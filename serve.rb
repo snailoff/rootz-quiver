@@ -18,9 +18,6 @@ get '/root/*' do |path|
 
 	begin
 		@rz = Rootz::Root.new path
-		# @rz.check
-		# @rz.read
-		# @rz.recent
 		@rz.parse
 		
 	rescue Rootz::InvalidPathError => e
@@ -33,12 +30,12 @@ get '/root/*' do |path|
 	
 end
 
-get '/' do
-  redirect to('/root/days')
-end
+# get '/' do
+#   redirect to('/root/days')
+# end
 
-get '/root' do
-  redirect to('/root/days')
-end
+# get '/root' do
+#   redirect to('/root/days')
+# end
 
 

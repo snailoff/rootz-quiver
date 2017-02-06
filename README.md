@@ -1,22 +1,43 @@
-# rootz
+# rootz-quiver
 
 
 ## get started
 ### install
 ```
 $ git clone https://github.com/snailoff/rootz-quiver.git
-$ cd rootz
 $ gem install sinatra sinatra-contrib thin haml rouge logger sass
+```
 
+### config your setting
+
+first, copy ``setting.default`` file to ``setting`` file.
+
+```
+$ cp setting.default setting
+
+```
+
+then edit 'setting' file.
+
+``` 
+{
+	"qvlibrary_path" : "public/root/YOUR QUIVER QVLIBRARY'S PATH", 
+	"default_notebook" : "DEFAULT NOTEBOOK NAME"
+}
+```
+
+### run
+```
+$ cd rootz-quiver
 $ thin start
-or
+or throuth nohup
 $ nohup thin start &
 
 ```
 
 ### thin & apache
 
-you need mod_proxy.
+if you want run on apache, and you maybe need mod_proxy.
 
 ```
 $ cd apache_source_path/module/proxy
@@ -41,6 +62,4 @@ $ /your_apache_path/bin/apxs -i -a -c mod_proxy_http.c proxy_util.c
 ...
 ```
 
-## structure
-## grammar
 
