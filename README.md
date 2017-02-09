@@ -4,8 +4,8 @@
 ## get started
 ### install
 ```
-$ git clone https://github.com/snailoff/rootz-quiver.git
 $ gem install sinatra sinatra-contrib thin haml rouge logger sass
+$ git clone https://github.com/snailoff/rootz-quiver.git
 ```
 
 ### config your setting
