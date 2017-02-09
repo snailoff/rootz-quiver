@@ -9,33 +9,32 @@ require 'json'
 require './rootz'
 require './version'
 
+set :show_exceptions, :after_handler
+
 configure do
 	enable :reloader
 end
 
 get '/root/*' do |path|	
-	@rz
 
-	begin
-		@rz = Rootz::Root.new path
-		@rz.parse
-		
-	rescue Rootz::InvalidPathError => e
-		logger.error e.message
-		logger.error "redirect => #{e.object[:redirect_url]}"
-		redirect to e.object[:redirect_url]
-	end
+	@rz = Rootz::Root.new path
+	@rz.parse
 
 	haml :index
 	
 end
 
-# get '/' do
-#   redirect to('/root/days')
-# end
+get '*' do
+  redirect to('/root/')
+end
 
-# get '/root' do
-#   redirect to('/root/days')
-# end
+error Rootz::InvalidPathError do
+	logger.error "#{env['sinatra.error'].message}"
+	logger.error "#{env['sinatra.error'].object.redirect_url}"
+	redirect to env['sinatra.error'].object.redirect_url
+end
 
-
+error Rootz::InvalidConfigError do
+	logger.error "#{env['sinatra.error'].message}"
+	haml :error
+end

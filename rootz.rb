@@ -7,31 +7,44 @@ module Rootz
 		end
 	end
 
+	class InvalidConfigError < StandardError
+		attr_reader :object
+
+		def initialize object
+			@object = object
+		end
+	end
+
 	class Root
 		attr_accessor :subject, :navi, :parsed, :created, :redirect_url, :header_image
 
 		def initialize path
-			Rootz.logger.info
 
 			get_settings
+
+			Rootz.logger.info "path : #{path}"
+			Rootz.logger.info "@qvlibrary_path : #{@qvlibrary_path}"
+			Rootz.logger.info "@default_notebook : #{@default_notebook}"
+
+			if path.empty? 
+				@redirect_url = "/root/#{@default_notebook}"
+				
+				raise Rootz::InvalidPathError.new(self), "no notebook parameter."
+			end
 
 			if path =~ /^(.*?)(\/[0-9]+)?$/ 
 				@param_notebook = $1
 				@param_page = $2	
+				Rootz.logger.info "notebook : #{@param_notebook}"
+				Rootz.logger.info "page : #{@param_page}"
 
 			else
-				#redirect to "/root/#{@default_notebook}"
+				redirect to "/root/#{@default_notebook}"
+				return
 			end
 
-			@root = get_notebook_root
-
-
-			# unless path =~ /^(.*?)(\/[0-9]+)?$/ 
-				
-
-			# end
-			Rootz.logger.info "notebook : #{@param_notebook}"
-			Rootz.logger.info "page : #{@param_page}"
+			@root = get_notebook_root @param_notebook
+			
 			Rootz.logger.info "@root : #{@root}"
 		end
 
@@ -50,21 +63,24 @@ module Rootz
 
 	  	def get_settings
 			@settings = JSON.parse File.read("#{File.expand_path "..", __FILE__}/settings")
-			@default_notebook = "#{File.expand_path "..", __FILE__}/#{@settings["qvlibrary_path"]}"
-			if File.exist? @default_notebook
-				@notebooks_path = @settings["qvlibrary_path"] 
-			end
+
+			qvlibrary = "#{File.expand_path "..", __FILE__}/#{@settings["qvlibrary_path"]}"
+
+			raise Rootz::InvalidConfigError.new self unless File.exist? qvlibrary
+
+			@notebooks_path = @settings["qvlibrary_path"]
+			@default_notebook = @settings["default_notebook"]
 		end
 
 
-		def get_notebook_root
+		def get_notebook_root selected
 			json = notebooks @notebooks_path
 			json.each do |x|
-				if x["name"] == @param_notebook
+				if x["name"] == selected
 					return "#{@notebooks_path}/#{x["uuid"]}.qvnotebook"					
 				end
 			end
-			""
+			raise Rootz::InvalidConfigError.new(self), "no default notebook"
 		end 
 
 
