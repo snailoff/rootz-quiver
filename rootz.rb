@@ -18,30 +18,17 @@ module Rootz
 	class Root
 		attr_accessor :subject, :navi, :parsed, :created, :redirect_url, :header_image
 
-		def initialize path
+		def initialize notebook, page
 
 			get_settings
 
-			Rootz.logger.info "path : #{path}"
+			Rootz.logger.info "notebook : #{notebook}"
+			Rootz.logger.info "page : #{page}"
 			Rootz.logger.info "@qvlibrary_path : #{@qvlibrary_path}"
 			Rootz.logger.info "@default_notebook : #{@default_notebook}"
 
-			if path.empty? 
-				@redirect_url = "/root/#{@default_notebook}"
-				
-				raise Rootz::InvalidPathError.new(self), "no notebook parameter."
-			end
-
-			if path =~ /^(.*?)(\/[0-9]+)?$/ 
-				@param_notebook = $1
-				@param_page = $2	
-				Rootz.logger.info "notebook : #{@param_notebook}"
-				Rootz.logger.info "page : #{@param_page}"
-
-			else
-				redirect to "/root/#{@default_notebook}"
-				return
-			end
+			@param_notebook = notebook
+			@param_page = page
 
 			@root = get_notebook_root @param_notebook
 			
@@ -97,7 +84,6 @@ module Rootz
 		# title
 		# cells
 		def note_view qvnote_path
-			Rootz.logger.info "qvnote : #{qvnote_path}"
 			j = JSON.parse File.read("#{qvnote_path}/content.json")
 			
 			con = ""

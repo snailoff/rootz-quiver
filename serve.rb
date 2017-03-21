@@ -15,17 +15,17 @@ configure do
 	enable :reloader
 end
 
-get '/root/*' do |path|	
-
-	@rz = Rootz::Root.new path
+get '/root/:notebook/:page' do |notebook, page|	
+	@rz = Rootz::Root.new(notebook, page)
 	@rz.parse
 
-	haml :index
-	
+	haml :index	
 end
 
 get '*' do
-  redirect to('/root/')
+	@settings = JSON.parse File.read("#{File.expand_path "..", __FILE__}/settings")
+	notebook = @settings["default_notebook"]
+	redirect to("/root/#{notebook}/1")
 end
 
 error Rootz::InvalidPathError do
